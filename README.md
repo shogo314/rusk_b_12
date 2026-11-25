@@ -1,6 +1,6 @@
 # Rusk
 
-Ruskは競技プログラミング向けの言語です。Rustで実装した処理系がRuskのソースを単一のC++20ソースへ変換します。作者自身の書きやすさと、競技プログラミングで十分な実行速度を目指しています。このリポジトリはβ11の開発版です。現在の仕様と制限は文書に、これから取り組む範囲は[作業計画](docs/development/plan.md)に記載しています。
+Ruskは競技プログラミング向けの言語です。Rustで実装した処理系がRuskのソースを単一のC++20ソースへ変換します。作者自身の書きやすさと、競技プログラミングで十分な実行速度を目指しています。このリポジトリはβ12の開発版です。現在の仕様と制限は文書に、これから取り組む範囲は[作業計画](docs/development/plan.md)に記載しています。
 
 ## 試す
 
@@ -30,13 +30,13 @@ wt total;
 
 `let b := a;`はオブジェクトを共有し、`let b = a;`はコピーします。既存の変数に対する`=`は中身を更新し、`:=`は共有先を結び直します。整数にも同じ規則を適用します。`readonly`・`fixed`・`noescape`で利用を制限し、推論した共有・効果・脱出の情報に照らして契約を検査できます。
 
-標準ライブラリは辞書・集合、遅延map/filter、集計・探索・ソートを備えます。追加のデータ構造にはUnion-Find、Fenwick Tree、セグメント木、優先度付きキューがあります。標準の操作はRusk関数またはC++へ接続する通常のextern宣言で記述し、型・関数の具体化と参照解決を共通の基盤で扱います。
+標準ライブラリは辞書・集合、遅延map/filter、集計・探索・ソートを備えます。追加のデータ構造にはUnion-Find、Fenwick Tree、セグメント木、優先度付きキューがあります。標準の操作はRusk関数またはC++へ接続する通常のextern宣言で記述し、型・関数の具体化と参照解決を共通の基盤で扱います。β12では遅延・永続セグメント木、巻き戻しUnion-Find、グラフ・文字列・数論のアルゴリズムを追加しました。
 
 再帰型と循環共有に対応します。循環を切る責任は利用者が持ちます。Int・Boolのコンパイル時の値引数と`readonly T`の型表記を扱えます。任意精度整数BigInt、直接格納するIntArray、ビット列、固定長配列、スライス、整列コンテナ、順列列挙も標準で使えます。名前付き・既定引数、一般のコンパイル時関数評価は未実装です。対応範囲は[機能と制限](docs/reference/status.md)、今後の方向性と未決定事項は[将来の方針](docs/future.md)を参照してください。
 
 ## ドキュメント
 
-- [公開サイト](https://shogo314.github.io/rusk_b_11/)／[ドキュメントの入口](docs/index.md)
+- [公開サイト](https://shogo314.github.io/rusk_b_12/)／[ドキュメントの入口](docs/index.md)
 - [チュートリアル](docs/getting-started/tutorial.md)／[型の一覧](docs/reference/types.md)／[演算子](docs/reference/operators.md)／[言語リファレンス](docs/reference/index.md)／[標準ライブラリ](docs/library/index.md)
 - [ソースの整形](docs/getting-started/formatting.md)／[文書コメント](docs/development/doc-comments.md)
 - [開発ガイド](docs/development/index.md)／[変換パイプライン](docs/development/pipeline.md)／[externの規則](docs/development/extern.md)
@@ -46,7 +46,7 @@ wt total;
 
 ## 実例と検証
 
-[AtCoderの100問](examples/atcoder/README.md)は保存済み公式サンプル279件と照合します。[AOJの41解答](examples/aoj/README.md)と[Library Checkerの10解答](examples/library_checker/README.md)は公開ケースで検証します。これらはローカル検証で、オンライン提出のAC確認を意味しません。
+[AtCoderの100問](examples/atcoder/README.md)は保存済み公式サンプル279件と照合します。[AOJの42解答](examples/aoj/README.md)と[Library Checkerの10解答](examples/library_checker/README.md)は公開ケースで検証します。これらはローカル検証で、オンライン提出のAC確認を意味しません。
 
 ```bash
 python3 tools/test.py --suite local

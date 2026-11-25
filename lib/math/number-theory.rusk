@@ -1,0 +1,78 @@
+// The inputs to this helper have magnitude at most 2^63.
+fn __extended_gcd__(a: Int128, b: Int128) -> (Int128, Int128, Int128) {
+    let r := a;
+    let next_r := b;
+    let x := 1i128;
+    let next_x := 0i128;
+    let y := 0i128;
+    let next_y := 1i128;
+    while next_r != 0i128 {
+        let q := r / next_r;
+        let remainder := r - q * next_r;
+        let coefficient_x := x - q * next_x;
+        let coefficient_y := y - q * next_y;
+        r := next_r;
+        next_r := remainder;
+        x := next_x;
+        next_x := coefficient_x;
+        y := next_y;
+        next_y := coefficient_y;
+    }
+    if r < 0i128 {
+        return (-r, -x, -y);
+    }
+    return (r, x, y);
+}
+
+/// (g,x,y)を返します。gは非負で、a*x+b*y=gを満たします。
+fn extended_gcd(a: Int, b: Int) -> (Int128, Int128, Int128) {
+    return __extended_gcd__(Int128(a), Int128(b));
+}
+
+fn __positive_remainder__(a: Int128, modulus: Int128) -> Int128 {
+    let remainder := a % modulus;
+    return if remainder < 0i128 {
+        remainder + modulus
+    } else {
+        remainder
+    };
+}
+
+/// (剰余, 正の法)の組を統合し、解があれば最小非負解と周期を返します。
+fn crt(congruences: Vec<(Int, Int)>) -> Option<(Int, Int)> {
+    for pair in congruences {
+        assert(pair[1] > 0);
+    }
+    let residue := 0i128;
+    let modulus := 1i128;
+    for pair in congruences {
+        let other := Int128(pair[1]);
+        let target := __positive_remainder__(Int128(pair[0]), other);
+        let (gcd, inverse, _) := __extended_gcd__(modulus, other);
+        let difference := target - residue;
+        if difference % gcd != 0i128 {
+            return None;
+        }
+        let factor := other / gcd;
+        let offset := __positive_remainder__((difference / gcd) * inverse, factor);
+        residue += modulus * offset;
+        modulus := Int128(Int(modulus * factor));
+    }
+    return Some((Int(residue), Int(modulus)));
+}
+
+/// 非負のnに対し、平方がn以下となる最大の整数を返します。
+fn isqrt(n: Int) -> Int {
+    assert(n >= 0);
+    let low := 0;
+    let high := 3037000500;
+    while high - low > 1 {
+        let middle := low + (high - low) / 2;
+        if middle <= n / middle {
+            low := middle;
+        } else {
+            high := middle;
+        }
+    }
+    return low;
+}

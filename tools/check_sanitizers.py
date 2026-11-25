@@ -9,6 +9,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES = [
+    ((ROOT/'examples/beta12/standard_library.rusk').read_text(),b'',b'40 29 1\n2 No 3\n10 28 37\n7 Yes\n0 1 2\n2\n7 0 1\n5 3 1 0 4 2\n1 3 0 0 2\n3 3 4 24 3\n'),
     ((ROOT/'examples/beta11/ordered_reentry.rusk').read_text(),b'',b'before\n',b'container reentered during ordered operation'),
     ((ROOT/'examples/beta11/standard_library.rusk').read_text(),b'',b'1 1 2\n1 2 1\n2 1 1\n2 1 1\n1234567890123456789012345678900 -3 2\n1 2 4 7\n01010 3\n1 2 3 3\n1 8 3 8 3\n1 3 3 2\n1 2 a b\n6 72 1 3 6\n'),
     ((ROOT/'examples/beta11/hash_reentry.rusk').read_text(),b'3',b'before\n',b'container changed during key export'),

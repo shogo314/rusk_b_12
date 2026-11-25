@@ -1,0 +1,161 @@
+fn __graph_check_vertex__(n: Int, vertex: Int) {
+    assert(0 <= vertex && vertex < n);
+}
+
+fn __graph_adjacency__(n: Int, edges: Vec<(Int, Int)>, reverse: Bool) -> Vec<Vec<Int>> {
+    assert(n >= 0);
+    let rows: Vec<Vec<Int>> := [[]; n];
+    for (from, to) in edges {
+        __graph_check_vertex__(n, from);
+        __graph_check_vertex__(n, to);
+        if reverse {
+            rows[to].push_back(copy(from));
+        } else {
+            rows[from].push_back(copy(to));
+        }
+    }
+    return rows;
+}
+
+/// 有向グラフをトポロジカルソートします。閉路があればNoneを返します。
+fn topological_sort(n: Int, edges: Vec<(Int, Int)>) -> Option<Vec<Int>> {
+    let rows := __graph_adjacency__(n, edges, false);
+    let incoming := [0; n];
+    for (_, to) in edges {
+        incoming[to] += 1;
+    }
+    let order: Vec<Int> := [];
+    for vertex in 0 .. n {
+        if incoming[vertex] == 0 {
+            order.push_back(copy(vertex));
+        }
+    }
+    let head := 0;
+    while head < order.len() {
+        let vertex := order[head];
+        head += 1;
+        for to in rows[vertex] {
+            incoming[to] -= 1;
+            if incoming[to] == 0 {
+                order.push_back(copy(to));
+            }
+        }
+    }
+    if order.len() == n {
+        return Some(order);
+    }
+    return None;
+}
+
+/// 強連結成分を縮約グラフのトポロジカル順に返します。
+fn strongly_connected_components(n: Int, edges: Vec<(Int, Int)>) -> Vec<Vec<Int>> {
+    let rows := __graph_adjacency__(n, edges, false);
+    let reverse := __graph_adjacency__(n, edges, true);
+    let seen := [false; n];
+    let cursor := [0; n];
+    let finish: Vec<Int> := [];
+    let stack: Vec<Int> := [];
+    for root in 0 .. n {
+        if !seen[root] {
+            seen[root] = true;
+            stack.push_back(copy(root));
+            while stack.len() > 0 {
+                let vertex := stack[stack.len() - 1];
+                let index := copy(cursor[vertex]);
+                if index == rows[vertex].len() {
+                    finish.push_back(stack.pop_back());
+                } else {
+                    cursor[vertex] += 1;
+                    let to := rows[vertex][index];
+                    if !seen[to] {
+                        seen[to] = true;
+                        stack.push_back(copy(to));
+                    }
+                }
+            }
+        }
+    }
+    let assigned := [false; n];
+    let components: Vec<Vec<Int>> := [];
+    while finish.len() > 0 {
+        let root := finish.pop_back();
+        if !assigned[root] {
+            let component: Vec<Int> := [];
+            assigned[root] = true;
+            stack.push_back(root);
+            while stack.len() > 0 {
+                let vertex := stack.pop_back();
+                component.push_back(vertex);
+                for to in reverse[vertex] {
+                    if !assigned[to] {
+                        assigned[to] = true;
+                        stack.push_back(copy(to));
+                    }
+                }
+            }
+            components.push_back(component);
+        }
+    }
+    return components;
+}
+
+fn __graph_distance_before__(a: (Int128, Int), b: (Int128, Int)) -> Bool {
+    return a[0] < b[0];
+}
+
+/// 非負重みの有向グラフで始点からの距離を返します。到達不能な頂点の値はNoneです。
+fn dijkstra(n: Int, edges: Vec<(Int, Int, Int)>, source: Int) -> Vec<Option<Int128>> {
+    __graph_check_vertex__(n, source);
+    let rows: Vec<Vec<(Int, Int)>> := [[]; n];
+    for (from, to, weight) in edges {
+        __graph_check_vertex__(n, from);
+        __graph_check_vertex__(n, to);
+        assert(weight >= 0);
+        rows[from].push_back((copy(to), copy(weight)));
+    }
+    let distances := [None::<Int128>(); n];
+    distances[source] := Some(0i128);
+    let queue := PriorityQueue([(0i128, copy(source))], __graph_distance_before__);
+    while !queue.is_empty() {
+        let (length, vertex) := queue.pop();
+        if length == distances[vertex].value() {
+            for (to, weight) in rows[vertex] {
+                let candidate := length + Int128(weight);
+                if distances[to].is_none() || candidate < distances[to].value() {
+                    distances[to] := Some(candidate);
+                    queue.push((candidate, to));
+                }
+            }
+        }
+    }
+    return distances;
+}
+
+fn __graph_edge_order__(a: (Int, Int), b: (Int, Int)) -> Bool {
+    return a[0] < b[0] || (a[0] == b[0] && a[1] < b[1]);
+}
+
+/// 無向グラフの最小全域森を作り、合計重みと採用した入力辺の添字を返します。
+fn minimum_spanning_forest(n: Int, edges: Vec<(Int, Int, Int)>) -> (Int128, Vec<Int>) {
+    assert(n >= 0);
+    let order: Vec<(Int, Int)> := [];
+    for index in 0 .. edges.len() {
+        let (from, to, weight) := edges[index];
+        __graph_check_vertex__(n, from);
+        __graph_check_vertex__(n, to);
+        order.push_back((copy(weight), copy(index)));
+    }
+    sort_by_comp(order, __graph_edge_order__);
+    let uf := UnionFind(n);
+    let total := 0i128;
+    let selected: Vec<Int> := [];
+    for (weight, index) in order {
+        let (from, to, _) := edges[index];
+        if !uf.same(from, to) {
+            uf.unite(from, to);
+            total += Int128(weight);
+            selected.push_back(copy(index));
+        }
+    }
+    return (total, selected);
+}

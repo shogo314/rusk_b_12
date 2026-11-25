@@ -1,0 +1,181 @@
+/// 永続セグメント木が版間で共有する不変のノードです。
+extern type<T> PersistentSegTreeNode {
+    cpp_name: "RuskPersistentSegTreeNode<{T}>",
+}
+
+extern fn __persistent_segtree_leaf__<T>(value: T) -> PersistentSegTreeNode<T> {
+    code: "Obj<@{PersistentSegTreeNode<T>}> @{fn}(Obj<@{T}> value, Loc loc) { return make_obj<@{PersistentSegTreeNode<T>}>(@{PersistentSegTreeNode<T>}{@{call __copy__(T)->T}(value, loc), {}, {}}); }",
+}
+
+extern fn __persistent_segtree_node__<T>(
+    value: T,
+    left: PersistentSegTreeNode<T>,
+    right: PersistentSegTreeNode<T>
+) -> PersistentSegTreeNode<T> {
+    code: "Obj<@{PersistentSegTreeNode<T>}> @{fn}(Obj<@{T}> value, Obj<@{PersistentSegTreeNode<T>}> left, Obj<@{PersistentSegTreeNode<T>}> right, Loc loc) { return make_obj<@{PersistentSegTreeNode<T>}>(@{PersistentSegTreeNode<T>}{@{call __copy__(T)->T}(value, loc), left, right}); }",
+}
+
+extern fn __persistent_segtree_value__<T>(node: PersistentSegTreeNode<T>) -> T {
+    code: "Obj<@{T}> @{fn}(Obj<@{PersistentSegTreeNode<T>}> node, Loc loc) { return @{call __copy__(T)->T}(node->value, loc); }",
+}
+
+extern fn __persistent_segtree_left__<T>(node: PersistentSegTreeNode<T>) -> PersistentSegTreeNode<T> {
+    code: "Obj<@{PersistentSegTreeNode<T>}> @{fn}(Obj<@{PersistentSegTreeNode<T>}> node, Loc loc) { if (!node->left) fail(loc, \"persistent segment tree leaf\"); return node->left; }",
+}
+
+extern fn __persistent_segtree_right__<T>(node: PersistentSegTreeNode<T>) -> PersistentSegTreeNode<
+    T
+> {
+    code: "Obj<@{PersistentSegTreeNode<T>}> @{fn}(Obj<@{PersistentSegTreeNode<T>}> node, Loc loc) { if (!node->right) fail(loc, \"persistent segment tree leaf\"); return node->right; }",
+}
+
+/// 一点更新で新しい版を作るセグメント木です。
+struct PersistentSegTree<T, Op> {
+    /// 元の列の長さです。
+    length: Int;
+    /// 変更されない木の根です。
+    root: PersistentSegTreeNode<T>;
+    /// 集計の単位元です。
+    identity: T;
+    /// 結合的な集計演算です。
+    operation: Op;
+}
+
+fn __persistent_segtree_branch__<T, Op>(
+    left: PersistentSegTreeNode<T>,
+    right: PersistentSegTreeNode<T>,
+    operation: Op
+) -> PersistentSegTreeNode<T> {
+    let value := operation(__persistent_segtree_value__(left), __persistent_segtree_value__(right));
+    return __persistent_segtree_node__(value, left, right);
+}
+
+fn __persistent_segtree_build__<T, Op>(
+    values: Vec<T>,
+    start: Int,
+    end: Int,
+    identity: T,
+    operation: Op
+) -> PersistentSegTreeNode<T> {
+    if start == end {
+        return __persistent_segtree_leaf__(identity);
+    }
+    if end - start == 1 {
+        return __persistent_segtree_leaf__(values[start]);
+    }
+    let middle := start + (end - start) / 2;
+    let left := __persistent_segtree_build__(values, start, middle, identity, operation);
+    let right := __persistent_segtree_build__(values, middle, end, identity, operation);
+    return __persistent_segtree_branch__(left, right, operation);
+}
+
+/// 値の列をコピーして初版を構築します。
+fn PersistentSegTree<T, Op>(values: Vec<T>, identity: T, operation: Op) -> PersistentSegTree<T, Op> {
+    return PersistentSegTree::<T, Op> {
+        length: values.len(),
+        root: __persistent_segtree_build__(values, 0, values.len(), identity, operation),
+        identity: copy(identity),
+        operation: operation
+    };
+}
+
+/// 不変の木を共有する新しい版のハンドルを返します。
+fn __copy__<T, Op>(tree: PersistentSegTree<T, Op>) -> PersistentSegTree<T, Op> {
+    return PersistentSegTree::<T, Op> {
+        length: copy(tree.length),
+        root: tree.root,
+        identity: copy(tree.identity),
+        operation: copy(tree.operation)
+    };
+}
+
+fn __persistent_segtree_update__<T, Op>(
+    node: PersistentSegTreeNode<T>,
+    start: Int,
+    end: Int,
+    index: Int,
+    value: T,
+    operation: Op
+) -> PersistentSegTreeNode<T> {
+    if end - start == 1 {
+        return __persistent_segtree_leaf__(value);
+    }
+    let left := __persistent_segtree_left__(node);
+    let right := __persistent_segtree_right__(node);
+    let middle := start + (end - start) / 2;
+    if index < middle {
+        let updated := __persistent_segtree_update__(left, start, middle, index, value, operation);
+        return __persistent_segtree_branch__(updated, right, operation);
+    }
+    let updated := __persistent_segtree_update__(right, middle, end, index, value, operation);
+    return __persistent_segtree_branch__(left, updated, operation);
+}
+
+/// indexの値を置き換えた新しい版を返します。
+fn updated<T, Op>(tree: PersistentSegTree<T, Op>, index: Int, value: T) -> PersistentSegTree<T, Op> {
+    assert(0 <= index && index < tree.length);
+    return PersistentSegTree::<T, Op> {
+        length: copy(tree.length),
+        root: __persistent_segtree_update__(tree.root, 0, tree.length, index, value, tree.operation),
+        identity: copy(tree.identity),
+        operation: copy(tree.operation)
+    };
+}
+
+fn __persistent_segtree_prod__<T, Op>(
+    node: PersistentSegTreeNode<T>,
+    start: Int,
+    end: Int,
+    left: Int,
+    right: Int,
+    identity: T,
+    operation: Op
+) -> T {
+    if right <= start || end <= left || left == right {
+        return copy(identity);
+    }
+    if left <= start && end <= right {
+        return __persistent_segtree_value__(node);
+    }
+    let middle := start + (end - start) / 2;
+    return operation(
+        __persistent_segtree_prod__(
+            __persistent_segtree_left__(node),
+            start,
+            middle,
+            left,
+            right,
+            identity,
+            operation
+        ),
+        __persistent_segtree_prod__(
+            __persistent_segtree_right__(node),
+            middle,
+            end,
+            left,
+            right,
+            identity,
+            operation
+        )
+    );
+}
+
+/// 指定した版の半開区間[left,right)を順に集計します。
+fn prod<T, Op>(tree: PersistentSegTree<T, Op>, left: Int, right: Int) -> T {
+    assert(0 <= left && left <= right && right <= tree.length);
+    return __persistent_segtree_prod__(
+        tree.root,
+        0,
+        tree.length,
+        left,
+        right,
+        tree.identity,
+        tree.operation
+    );
+}
+
+/// 指定位置の値のコピーを返します。
+fn get<T, Op>(tree: PersistentSegTree<T, Op>, index: Int) -> T {
+    assert(0 <= index && index < tree.length);
+    return tree.prod(index, index + 1);
+}

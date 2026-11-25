@@ -2,4 +2,7 @@ include "fenwick-tree.rusk";
 include "unionfind.rusk";
 include "sum-segtree.rusk";
 include "segtree.rusk";
+include "lazy-segtree.rusk";
 include "priority-queue.rusk";
+include "rollback-unionfind.rusk";
+include "persistent-segtree.rusk";

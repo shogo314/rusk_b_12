@@ -21,3 +21,6 @@ include "data_structures/ordered.rusk";
 include "math/numeric.rusk";
 include "collections/slice.rusk";
 include "math/big-int-conversion.rusk";
+include "math/number-theory.rusk";
+include "graph/general-graph.rusk";
+include "string/suffix-array.rusk";

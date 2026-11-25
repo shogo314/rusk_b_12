@@ -1,0 +1,42 @@
+fn sum(a: Int, b: Int) -> Int {
+    return a + b;
+}
+fn add_to_sum(addition: Int, value: Int, length: Int) -> Int {
+    return value + addition * length;
+}
+
+let numbers := [1, 2, 3, 4];
+let lazy := LazySegTree(numbers, 0, 0, sum, add_to_sum, sum);
+lazy.apply_range(0, 3, 10);
+let lazy_copy = lazy;
+lazy_copy.set(0, 0);
+wt lazy.prod(0, 4), lazy_copy.prod(0, 4), numbers[0];
+
+let uf := RollbackUnionFind(4);
+uf.unite(0, 1);
+let checkpoint := uf.snapshot();
+uf.unite(1, 2);
+let uf_copy = uf;
+uf.rollback(checkpoint);
+wt uf.size(0), uf.same(0, 2), uf_copy.size(0);
+
+let base := PersistentSegTree(numbers, 0, sum);
+let changed := base.updated(1, 20);
+let branched := base.updated(2, 30);
+let handle = changed;
+wt base.prod(0, 4), handle.prod(0, 4), branched.prod(0, 4);
+
+let distances := dijkstra(4, [(0, 1, 2), (1, 2, 5)], 0);
+wt distances[2].value(), distances[3].is_none();
+wt topological_sort(3, [(0, 1), (1, 2)]).value();
+wt strongly_connected_components(3, [(0, 1), (1, 0), (1, 2)]).len();
+let (weight, edges) := minimum_spanning_forest(3, [(0, 1, 3), (1, 2, 4), (0, 2, 9)]);
+wt weight, edges;
+
+let suffixes := suffix_array("banana");
+wt suffixes;
+wt lcp_array("banana", suffixes);
+
+let (g, x, y) := extended_gcd(-15, 21);
+let (r, m) := crt([(-2, 6), (4, 8)]).value();
+wt g, -15i128 * x + 21i128 * y, r, m, isqrt(15);

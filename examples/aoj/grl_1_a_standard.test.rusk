@@ -1,0 +1,11 @@
+// verification-helper: PROBLEM https://onlinejudge.u-aizu.ac.jp/problems/GRL_1_A
+// Source: https://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=GRL_1_A
+in n, m, source: Int;
+in edges(m): Vec<(Int, Int, Int)>;
+for distance in dijkstra(n, edges, source) {
+    if let Some(value) = distance {
+        wt value;
+    } else {
+        wt "INF";
+    }
+}

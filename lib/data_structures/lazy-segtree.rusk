@@ -1,0 +1,190 @@
+/// 単位元・結合演算と、区間作用・作用合成を指定する遅延セグメント木です。
+struct LazySegTree<S, F, Op, Map, Compose> {
+    /// 元の配列の要素数です。
+    length: Int;
+    /// 内部の葉の数です。
+    size: Int;
+    /// 集計値。直接変更しないでください。
+    values: Vec<S>;
+    /// 各ノードに保留している作用。直接変更しないでください。
+    lazy: Vec<F>;
+    /// 作用が保留されているかを示します。
+    has_lazy: Vec<Bool>;
+    /// 集計の単位元です。
+    identity: S;
+    /// 作用の単位元です。
+    identity_action: F;
+    /// 結合的な集計演算です。
+    operation: Op;
+    /// action, value, segment_lengthから作用後の値を返します。
+    mapping: Map;
+    /// newer, olderの順で作用を合成します。
+    composition: Compose;
+}
+
+/// 値・単位元・演算・作用写像・作用合成を指定して構築します。
+fn LazySegTree<S, F, Op, Map, Compose>(
+    values: Vec<S>,
+    identity: S,
+    identity_action: F,
+    operation: Op,
+    mapping: Map,
+    composition: Compose
+) -> LazySegTree<S, F, Op, Map, Compose> {
+    let size := 1;
+    while size < values.len() {
+        size *= 2;
+    }
+    let tree := [identity; 2 * size];
+    for i in 0 .. values.len() {
+        tree[size + i] = values[i];
+    }
+    let node := size - 1;
+    while node > 0 {
+        tree[node] = operation(tree[2 * node], tree[2 * node + 1]);
+        node -= 1;
+    }
+    return LazySegTree::<S, F, Op, Map, Compose> {
+        length: values.len(),
+        size: size,
+        values: tree,
+        lazy: [identity_action; size],
+        has_lazy: [false; size],
+        identity: copy(identity),
+        identity_action: identity_action,
+        operation: operation,
+        mapping: mapping,
+        composition: composition
+    };
+}
+
+fn __lazy_segtree_apply_node__<S, F, Op, Map, Compose>(
+    seg: LazySegTree<S, F, Op, Map, Compose>,
+    node: Int,
+    action: F,
+    segment_length: Int
+) {
+    seg.values[node] = seg.mapping(action, seg.values[node], segment_length);
+    if node < seg.size {
+        if seg.has_lazy[node] {
+            seg.lazy[node] = seg.composition(action, seg.lazy[node]);
+        } else {
+            seg.lazy[node] = action;
+            seg.has_lazy[node] = true;
+        }
+    }
+}
+
+fn __lazy_segtree_push__<S, F, Op, Map, Compose>(
+    seg: LazySegTree<S, F, Op, Map, Compose>,
+    node: Int,
+    segment_length: Int
+) {
+    if node < seg.size && seg.has_lazy[node] {
+        let child_length := segment_length / 2;
+        __lazy_segtree_apply_node__(seg, 2 * node, seg.lazy[node], child_length);
+        __lazy_segtree_apply_node__(seg, 2 * node + 1, seg.lazy[node], child_length);
+        seg.lazy[node] = seg.identity_action;
+        seg.has_lazy[node] = false;
+    }
+}
+
+fn __lazy_segtree_apply_range__<S, F, Op, Map, Compose>(
+    seg: LazySegTree<S, F, Op, Map, Compose>,
+    node: Int,
+    node_left: Int,
+    node_right: Int,
+    left: Int,
+    right: Int,
+    action: F
+) {
+    if right <= node_left || node_right <= left {
+        return;
+    }
+    if left <= node_left && node_right <= right {
+        __lazy_segtree_apply_node__(seg, node, action, node_right - node_left);
+        return;
+    }
+    __lazy_segtree_push__(seg, node, node_right - node_left);
+    let middle := (node_left + node_right) / 2;
+    __lazy_segtree_apply_range__(seg, 2 * node, node_left, middle, left, right, action);
+    __lazy_segtree_apply_range__(seg, 2 * node + 1, middle, node_right, left, right, action);
+    seg.values[node] = seg.operation(seg.values[2 * node], seg.values[2 * node + 1]);
+}
+
+/// 半開区間[left,right)へactionを適用します。
+fn apply_range<S, F, Op, Map, Compose>(
+    seg: LazySegTree<S, F, Op, Map, Compose>,
+    left: Int,
+    right: Int,
+    action: F
+) {
+    assert(0 <= left && left <= right && right <= seg.length);
+    if left < right {
+        __lazy_segtree_apply_range__(seg, 1, 0, seg.size, left, right, action);
+    }
+}
+
+fn __lazy_segtree_prod__<S, F, Op, Map, Compose>(
+    seg: LazySegTree<S, F, Op, Map, Compose>,
+    node: Int,
+    node_left: Int,
+    node_right: Int,
+    left: Int,
+    right: Int
+) -> S {
+    if right <= node_left || node_right <= left {
+        return copy(seg.identity);
+    }
+    if left <= node_left && node_right <= right {
+        return copy(seg.values[node]);
+    }
+    __lazy_segtree_push__(seg, node, node_right - node_left);
+    let middle := (node_left + node_right) / 2;
+    let a := __lazy_segtree_prod__(seg, 2 * node, node_left, middle, left, right);
+    let b := __lazy_segtree_prod__(seg, 2 * node + 1, middle, node_right, left, right);
+    return seg.operation(a, b);
+}
+
+/// 半開区間[left,right)の集計を独立した値として返します。
+fn prod<S, F, Op, Map, Compose>(seg: LazySegTree<S, F, Op, Map, Compose>, left: Int, right: Int) -> S {
+    assert(0 <= left && left <= right && right <= seg.length);
+    if left == right {
+        return copy(seg.identity);
+    }
+    return __lazy_segtree_prod__(seg, 1, 0, seg.size, left, right);
+}
+
+fn __lazy_segtree_set__<S, F, Op, Map, Compose>(
+    seg: LazySegTree<S, F, Op, Map, Compose>,
+    node: Int,
+    node_left: Int,
+    node_right: Int,
+    position: Int,
+    value: S
+) {
+    if node_right - node_left == 1 {
+        seg.values[node] = value;
+        return;
+    }
+    __lazy_segtree_push__(seg, node, node_right - node_left);
+    let middle := (node_left + node_right) / 2;
+    if position < middle {
+        __lazy_segtree_set__(seg, 2 * node, node_left, middle, position, value);
+    } else {
+        __lazy_segtree_set__(seg, 2 * node + 1, middle, node_right, position, value);
+    }
+    seg.values[node] = seg.operation(seg.values[2 * node], seg.values[2 * node + 1]);
+}
+
+/// 指定位置の値をコピーして置き換えます。
+fn set<S, F, Op, Map, Compose>(seg: LazySegTree<S, F, Op, Map, Compose>, position: Int, value: S) {
+    assert(0 <= position && position < seg.length);
+    __lazy_segtree_set__(seg, 1, 0, seg.size, position, value);
+}
+
+/// 指定位置の値のコピーを返します。
+fn get<S, F, Op, Map, Compose>(seg: LazySegTree<S, F, Op, Map, Compose>, position: Int) -> S {
+    assert(0 <= position && position < seg.length);
+    return prod(seg, position, position + 1);
+}

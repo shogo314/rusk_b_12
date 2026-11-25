@@ -16,7 +16,8 @@
 | Dict・Set、find、try_read、不在を返す操作 | [辞書・集合とOption](collections.md) |
 | map・filter、集計、短絡探索、キー・比較関数付きソート、PriorityQueue・SegTree | [関数を使う操作とデータ構造](algorithms.md) |
 | 剰余累乗・素数判定・Z-algorithm・LCS・グリッドBFS | [分野別アルゴリズム](algorithms.md#migrated-algorithms) |
-| Union-Find、Fenwick Tree、区間和セグメント木 | [Ruskで記述したデータ構造](data-structures.md) |
+| グラフ・Suffix Array・LCP配列・数論 | [グラフアルゴリズム](algorithms.md#graph-algorithms)・[Suffix Array と LCP 配列](algorithms.md#suffix-array)・[数論](algorithms.md#number-theory) |
+| Union-Find、Fenwick Tree、区間和セグメント木、遅延・永続セグメント木 | [Ruskで記述したデータ構造](data-structures.md) |
 
 ## 型から探す
 
@@ -30,7 +31,7 @@
 | Option | Some・None、存在判定、共有取得、既定値、match | [Option](../reference/expressions.md) |
 | Dict・Set | 登録・検索・削除、キー・値の取得、走査 | [辞書・集合](collections.md) |
 | Range・遅延反復 | for、map・filter、to_vec、all・any、fold・scan | [反復型](../reference/types.md)・[走査と集計](algorithms.md) |
-| UnionFind・FenwickTree・SumSegTree | 併合、点更新、区間集計 | [基本データ構造](data-structures.md) |
+| UnionFind・FenwickTree・SumSegTree・LazySegTree・PersistentSegTree・RollbackUnionFind | 併合、点更新、区間集計、区間作用、版管理、巻き戻し | [基本データ構造](data-structures.md) |
 | PriorityQueue・SegTree | 優先度付き取り出し、演算を指定する区間集計 | [関数付きデータ構造](algorithms.md) |
 
 型引数と必要な操作の条件は各ページに記載します。構造体・enum・外部型に用意される操作と、利用者が追加する操作は[型の一覧](../reference/types.md#user-types)を参照してください。

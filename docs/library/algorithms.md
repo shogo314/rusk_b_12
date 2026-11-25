@@ -192,3 +192,50 @@ wt seg.min_left(4, (sum: Int) => sum <= 14); // 2
 | `graph/grid-graph.rusk` | `grid_shortest_path(grid, h, w)` | `#`を壁とする上下左右移動。左上から右下までの距離、到達不能なら-1。正の高さ・幅と全行の幅一致が必要。O(hw) |
 
 優先度付きキュー・Union-Find・Fenwick木・セグメント木も、examplesにあった実装を標準へ移しています。Fenwick木は`FenwickTree`、点加算は`apply`、区間集計は`prod`、先頭からの集計は`prefix_prod`です。加算用の`SumSegTree`と演算を渡す`SegTree`は別の型として残しています。
+
+## グラフアルゴリズム {#graph-algorithms}
+
+頂点番号は `0 .. n` です。辺は `(from, to)` または `(from, to, weight)` のタプルとして渡します。重みは `Int`、距離と重みの合計は `Int128` です。辺の端点が範囲外なら実行時エラーです。各操作は入力を変更せず、独立した結果を返します。
+
+| API | 結果と条件 | 時間計算量 |
+|---|---|---|
+| `dijkstra(n, edges, source)` | 有向辺の非負重みに対する始点からの距離。到達不能は `None`。始点が範囲外か負の辺があると実行時エラー。 | `O(n + m log(m + 1))` |
+| `topological_sort(n, edges)` | 有向グラフのトポロジカル順序。閉路があれば `None`。 | `O(n + m)` |
+| `strongly_connected_components(n, edges)` | 頂点のグループを縮約グラフのトポロジカル順で返す。グループ内の順序は未規定。 | `O(n + m)` |
+| `minimum_spanning_forest(n, edges)` | 無向グラフの最小全域森の合計重みと採用した辺の添字。等重みの辺は入力順。負の重みも扱う。 | `O(n + m log(m + 1))` |
+
+多重辺と自己ループを渡せます。頂点数0では、トポロジカル順序・強連結成分は空で、最小全域森は重み0と空の辺リストです。
+
+```rusk
+let paths := dijkstra(4, [(0, 1, 3), (1, 2, 4)], 0);
+wt paths[2].value(), paths[3].is_none();              // 7 Yes
+wt topological_sort(3, [(0, 1), (1, 2)]).value();      // 0 1 2
+wt strongly_connected_components(3, [(0, 1), (1, 0), (1, 2)]).len();  // 2
+let (weight, edges) := minimum_spanning_forest(3, [(0, 1, 3), (1, 2, 4), (0, 2, 9)]);
+wt weight, edges;                                    // 7 0 1
+```
+
+## Suffix Array と LCP 配列 {#suffix-array}
+
+`suffix_array(s)` は空接尾辞を除く接尾辞の開始位置を辞書順で返します。`lcp_array(s, sa)` の要素 `i` は `sa[i]` と `sa[i+1]` から始まる接尾辞の最長共通接頭辞長です。両方とも `Str` と `Vec<Int>` に対応し、`Str` の添字・長さはバイト単位です。空入力の結果は空配列です。長さ1の入力でもLCP配列は空です。`sa` が正しい接尾辞順序になっていない入力は実行時に拒否します。返される配列は入力と独立です。
+
+Suffix Array の計算時間は `O(n log n)`、LCP配列は `O(n)`、両方の補助領域は `O(n)` です。
+
+```rusk
+let sa := suffix_array("banana");
+wt sa;                        // 5 3 1 0 4 2
+wt lcp_array("banana", sa);   // 1 3 0 0 2
+```
+
+## 数論 {#number-theory}
+
+- `extended_gcd(a, b)` は `Int` から `Int128` の組 `(g, x, y)` を返します。 `g >= 0` かつ `a*x + b*y = g` です。両方0なら `(0, 1, 0)`、`Int` の最小値も受け付けます。Euclid法の除算回数は `O(1 + log(min(|a|, |b|) + 1))` です。
+- `crt(congruences)` は `(剰余, 法)` の列から最小非負解と周期の組を `Some` で返します。法が互いに素でなくても使え、解がなければ `None`、空入力は `Some((0, 1))` です。法は正である必要があります。途中の矛盾のない組の最小公倍数が `Int` を越えると実行時エラーです。各併合に拡張Euclid法を使います。
+- `isqrt(n)` は `floor(sqrt(n))` を正確な `Int` で返します。負の入力は実行時エラーです。`Int` の範囲を二分探索し、高々32回の除算を行います。
+
+```rusk
+let (g, x, y) := extended_gcd(-15, 21);
+wt g, -15i128 * x + 21i128 * y;      // 3 3
+let (r, m) := crt([(-2, 6), (4, 8)]).value();
+wt r, m, isqrt(15);                 // 4 24 3
+```

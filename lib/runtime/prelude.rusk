@@ -30,3 +30,13 @@ extern symbol __runtime_ordered__ {
     code_file: "ordered_containers.hpp",
     depends: "__runtime_collections__",
 }
+
+extern symbol __runtime_suffix_array__ {
+    code_file: "suffix_array.hpp",
+    depends: "__runtime_collections__",
+}
+
+extern symbol __runtime_persistent_segment_tree__ {
+    code_file: "persistent_segment_tree.hpp",
+    depends: "__core__",
+}

@@ -1,0 +1,88 @@
+/// 巻き戻しに必要な併合前の親と成分サイズです。
+struct RollbackUnionFindChange {
+    /// 併合先の根です。
+    root: Int;
+    /// 併合前の併合先の負の成分サイズです。
+    root_size: Int;
+    /// 併合元の根です。
+    child: Int;
+    /// 併合前の併合元の負の成分サイズです。
+    child_size: Int;
+}
+
+/// 現在の枝のスナップショットへ巻き戻せるUnion-Findです。
+struct RollbackUnionFind {
+    /// 根では負の成分サイズ、それ以外では親頂点を保持します。
+    parents: Vec<Int>;
+    /// 成功した併合の履歴です。直接変更しないでください。
+    history: Vec<RollbackUnionFindChange>;
+}
+
+/// 要素数nの巻き戻し可能なUnion-Findを構築します。
+fn RollbackUnionFind(n: Int) -> RollbackUnionFind {
+    assert(n >= 0);
+    return RollbackUnionFind {
+        parents: [-1; n],
+        history: []
+    };
+}
+
+/// 経路圧縮を行わず、頂点の代表を返します。
+fn leader(uf: readonly RollbackUnionFind, vertex: Int) -> Int {
+    assert(0 <= vertex && vertex < uf.parents.len());
+    let root := vertex;
+    while uf.parents[root] >= 0 {
+        root = uf.parents[root];
+    }
+    return root;
+}
+
+/// 二頂点が同じ連結成分に属するか返します。
+fn same(uf: readonly RollbackUnionFind, u: Int, v: Int) -> Bool {
+    return uf.leader(u) == uf.leader(v);
+}
+
+/// 頂点が属する連結成分のサイズを返します。
+fn size(uf: readonly RollbackUnionFind, vertex: Int) -> Int {
+    return -uf.parents[uf.leader(vertex)];
+}
+
+/// サイズの小さい側を大きい側へ併合します。すでに同じ成分なら偽を返します。
+fn unite(uf: RollbackUnionFind, u: Int, v: Int) -> Bool {
+    let root := uf.leader(u);
+    let child := uf.leader(v);
+    if root == child {
+        return false;
+    }
+    if uf.parents[root] > uf.parents[child] {
+        let previous := root;
+        root := child;
+        child := previous;
+    }
+    uf.history.push_back(
+        RollbackUnionFindChange {
+            root: root,
+            root_size: copy(uf.parents[root]),
+            child: child,
+            child_size: copy(uf.parents[child])
+        }
+    );
+    uf.parents[root] += uf.parents[child];
+    uf.parents[child] = root;
+    return true;
+}
+
+/// 現在の履歴位置を返します。呼び出し側で巻き戻しにより破棄した枝の位置を捨ててください。
+fn snapshot(uf: readonly RollbackUnionFind) -> Int {
+    return uf.history.len();
+}
+
+/// 現在の履歴上にある位置まで併合を取り消します。
+fn rollback(uf: RollbackUnionFind, checkpoint: Int) {
+    assert(0 <= checkpoint && checkpoint <= uf.history.len());
+    while uf.history.len() > checkpoint {
+        let change := uf.history.pop_back();
+        uf.parents[change.root] = change.root_size;
+        uf.parents[change.child] = change.child_size;
+    }
+}
