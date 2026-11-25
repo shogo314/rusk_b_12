@@ -51,14 +51,14 @@ fn crt(congruences: Vec<(Int, Int)>) -> Option<(Int, Int)> {
         let (gcd, inverse, _) := __extended_gcd__(modulus, other);
         let difference := target - residue;
         if difference % gcd != 0i128 {
-            return None;
+            return Option::<(Int, Int)>::None;
         }
         let factor := other / gcd;
         let offset := __positive_remainder__((difference / gcd) * inverse, factor);
         residue += modulus * offset;
         modulus := Int128(Int(modulus * factor));
     }
-    return Some((Int(residue), Int(modulus)));
+    return Option::<(Int, Int)>::Some((Int(residue), Int(modulus)));
 }
 
 /// 非負のnに対し、平方がn以下となる最大の整数を返します。

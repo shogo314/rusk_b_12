@@ -42,9 +42,9 @@ fn topological_sort(n: Int, edges: Vec<(Int, Int)>) -> Option<Vec<Int>> {
         }
     }
     if order.len() == n {
-        return Some(order);
+        return Option::<Vec<Int>>::Some(order);
     }
-    return None;
+    return Option::<Vec<Int>>::None;
 }
 
 /// 強連結成分を縮約グラフのトポロジカル順に返します。
@@ -113,22 +113,30 @@ fn dijkstra(n: Int, edges: Vec<(Int, Int, Int)>, source: Int) -> Vec<Option<Int1
         assert(weight >= 0);
         rows[from].push_back((copy(to), copy(weight)));
     }
-    let distances := [None::<Int128>(); n];
-    distances[source] := Some(0i128);
+    let distances := [-1i128; n];
+    distances[source] = 0i128;
     let queue := PriorityQueue([(0i128, copy(source))], __graph_distance_before__);
     while !queue.is_empty() {
         let (length, vertex) := queue.pop();
-        if length == distances[vertex].value() {
+        if length == distances[vertex] {
             for (to, weight) in rows[vertex] {
                 let candidate := length + Int128(weight);
-                if distances[to].is_none() || candidate < distances[to].value() {
-                    distances[to] := Some(candidate);
+                if distances[to] < 0i128 || candidate < distances[to] {
+                    distances[to] = candidate;
                     queue.push((candidate, to));
                 }
             }
         }
     }
-    return distances;
+    let result: Vec<Option<Int128>> := [];
+    for distance in distances {
+        if distance < 0i128 {
+            result.push_back(Option::<Int128>::None);
+        } else {
+            result.push_back(Option::<Int128>::Some(copy(distance)));
+        }
+    }
+    return result;
 }
 
 fn __graph_edge_order__(a: (Int, Int), b: (Int, Int)) -> Bool {
