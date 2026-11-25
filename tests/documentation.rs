@@ -149,6 +149,9 @@ fn algorithm_examples_include_the_required_libraries() {
             ("", "0 0 1\n"),
             ("", "1 3\n"),
             ("", "9\n10 17\n2\n2\n"),
+            ("", "7 Yes\n0 1 2\n2\n7 0 1\n"),
+            ("", "5 3 1 0 4 2\n1 3 0 0 2\n"),
+            ("", "3 3\n4 24 3\n"),
         ],
     );
 }
@@ -161,7 +164,10 @@ fn data_structure_examples_include_and_define_the_types_they_use() {
             ("", "Yes No\nNo Yes\n"),
             ("", "6 9\n15\n0\n"),
             ("", "9\n17\nabcdef\nabXef\n"),
+            ("", "25\n0 17\n"),
             ("", "10\n"),
+            ("", "3\nNo\n"),
+            ("", "abc aXc\nX\n"),
         ],
     );
 }

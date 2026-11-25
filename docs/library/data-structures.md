@@ -1,6 +1,6 @@
 # Ruskで記述したデータ構造
 
-`lib/data_structures/` はRuskで書いた標準ライブラリです。自動読み込みされるため、`include`は不要です。ファイル名と型名は[shogo-library](https://github.com/shogo314/shogo-library)を参考にしています。
+`lib/data_structures/` は各データ構造の標準APIと実装を定義します。自動読み込みされるため、`include`は不要です。ファイル名と型名は[shogo-library](https://github.com/shogo314/shogo-library)を参考にしています。
 
 構造体のフィールドは公開されていますが、通常は以下の関数を通して操作します。内部の配列や長さを直接変更するとデータ構造の前提が崩れます。関数への受け渡しは共有なので、更新は呼び出し元の状態にも反映されます。独立した状態が欲しい場合は `let other = value;` を使います。要素のコピーは`__copy__`に従い、手動コピーが共有を残す場合、その共有も保持されます。
 
